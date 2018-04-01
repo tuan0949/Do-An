@@ -1,0 +1,35 @@
+#include <stdio.h>
+// Khai bao cau truc Sinh Vien
+struct sinhvien{
+	char MSSV[10];
+	wchar_t HovaTen[30];
+	wchar_t Khoa[30];
+	int Khoa;
+	char Ngaysinh[10];
+	char Hinh[10];
+	wchar_t MoTa[1000];
+	wchar_t Sothich[1000];
+};
+typedef struct sinhvien SINHVIEN;
+// Doc file csv
+void ReadFile(FILE *stream, SINHVIEN *&sv,int n)
+{
+	wchar_t ch;
+	for (int i = 0; i < n; i++)
+	{
+
+	}
+}
+void main()
+{
+	SINHVIEN *sv;
+	int n;
+	FILE *stream;
+	_wfopen_s(&stream, L"gioithieu.csv" , L"r,ccs=UTF-8");
+	if (!stream)
+	{
+		wscanf_s(L"%d", &n);
+		sv = new SINHVIEN[n];
+
+	}
+}
