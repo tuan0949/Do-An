@@ -1,35 +1,144 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include <fcntl.h> 
+#include <io.h>   
 #include <stdio.h>
-// Khai bao cau truc Sinh Vien
+#include <string.h>
+#include <conio.h>
+#define N 4
+
+//KHAI BÁO CẤU TRÚC SINH VIÊN
 struct sinhvien{
-	char MSSV[10];
+	wchar_t MSSV[10];
 	wchar_t HovaTen[30];
 	wchar_t Khoa[30];
-	int Khoa;
-	char Ngaysinh[10];
-	char Hinh[10];
+	int NienKhoa;
+	wchar_t Email[20];
+	wchar_t Ngaysinh[10];
+	wchar_t Hinh[10];
 	wchar_t MoTa[1000];
 	wchar_t Sothich[1000];
 };
-typedef struct sinhvien SINHVIEN;
-// Doc file csv
-void ReadFile(FILE *stream, SINHVIEN *&sv,int n)
-{
-	wchar_t ch;
-	for (int i = 0; i < n; i++)
-	{
+typedef struct sinhvien SINHVIEN; 
 
+//ĐỌC FILE GIOITHIEU.CSV
+void DocFileCSV(FILE *FileIn, SINHVIEN *&sv)
+{
+	for (int i = 0; i < N; i++)
+	{
+		fwscanf(FileIn, L"%[^,],%[^,],%[^,]", sv[i].MSSV, sv[i].HovaTen, sv[i].Khoa);
+		fseek(FileIn, 1, 1);
+		fwscanf(FileIn, L"%d", &sv[i].NienKhoa);
+		fseek(FileIn, 1, 1);
+		fwscanf(FileIn, L"%[^,],%[^,],%[^,],%[^,]",sv[i].Email, sv[i].Ngaysinh, sv[i].Hinh, sv[i].MoTa);
+		fseek(FileIn, 2, 1);
+		fgetws(sv[i].Sothich, 1000, FileIn);
 	}
 }
-void main()
-{
-	SINHVIEN *sv;
-	int n;
-	FILE *stream;
-	_wfopen_s(&stream, L"gioithieu.csv" , L"r,ccs=UTF-8");
-	if (!stream)
-	{
-		wscanf_s(L"%d", &n);
-		sv = new SINHVIEN[n];
 
+//HÀM CHÈN DỮ LIỆU SINH VIÊN VÀO HTML
+void ChenDuLieu(wchar_t *ChuoiCha, wchar_t *ChuoiCon,int ViTriChen)
+{
+	int DoDaiChuoiCha = wcslen(ChuoiCha);
+	int DoDaiChuoiCon = wcslen(ChuoiCon);
+	wchar_t *temp;
+	if (ViTriChen > DoDaiChuoiCha)
+	{
+		ViTriChen = DoDaiChuoiCha;
 	}
+	if (ViTriChen < DoDaiChuoiCha)
+	{
+		temp = new wchar_t[DoDaiChuoiCha - ViTriChen + 1];
+		wcscpy(temp, ChuoiCha + ViTriChen);
+		wcscpy(ChuoiCha + ViTriChen, ChuoiCon);
+		wcscpy(ChuoiCha + ViTriChen + DoDaiChuoiCon, temp);
+		delete[] temp;
+	}
+	else wcscpy(ChuoiCha + ViTriChen, ChuoiCon);
+}
+
+/*
+//HÀM TẠO TÊN FILE 
+void TaoTenFile(wchar_t *&TenFile, wchar_t MSSV)
+{
+	wchar_t DuoiFile[] = L".html";
+	wcscat(TenFile, DuoiFile);
+}
+*/
+
+//HÀM XULY DÙNG ĐỂ NỘI DUNG TỪ FILE HTML.TXT ĐỒNG THỜI GHI DỮ LIỆU VÀO FILEOUT.TXT
+void XuLy(FILE* FileHTML, SINHVIEN *sv)
+{
+	
+	//KHAI BÁO CÁC DÒNG DÙNG ĐỂ CHÈN THÔNG TIN SINH VIÊN
+	wchar_t Title[] = L"<title>HCMUS - ";
+	wchar_t Personal_Fullname[] = L"<span class=\"Personal_FullName\">";
+	wchar_t Personal_Department[] = L"<div class=\"Personal_Department\">";
+	wchar_t Email[] = L"Email: ";
+	wchar_t Personal_Image[] = L"<img src=\"Images / ";
+	wchar_t HovaTen[] = L"<li>Họ và tên: ";
+	wchar_t MSSV[] = L"<li>MSSV: ";
+	wchar_t SinhVienKhoa[] = L"<li>Sinh viên khoa";
+	wchar_t Khoa[] = L"<li>Khóa: ";
+	wchar_t Ngaysinh[] = L"<li>Ngày sinh: ";
+	wchar_t Mail[] = L"<li>Email:";
+	wchar_t SoThich[]=L"<div class = \"InfoGroup\">Sở thích :";
+	wchar_t Mota[] = L"<div class=\"Description\">";
+	wchar_t TenSinhVienThucHien[] = L"MSSV - ";
+
+	//GHI DỮ LIỆU VÀO FILE.HTML
+	FILE* FileOut;
+	FileOut = _wfopen(L"test.html", L"w,ccs=UTF-8");
+	wchar_t s[1000];
+	while ( !feof(FileHTML) )
+	{
+		fgetws(s, 1000, FileHTML);
+		if (wcsstr(s, Title) != NULL)
+		{
+			ChenDuLieu(s, sv[0].HovaTen, 15);
+			fputws(s, FileOut);
+			continue; //DÙNG ĐỂ BỎ QUA CÁC DÒNG BÊN DƯỚI VÀ THỰC HIỆN TIẾP VÒNG LẶP
+		}
+		if (wcsstr(s, Personal_Fullname) != NULL)
+		{
+			//<span class="Personal_FullName"> CHIỀU DÀI TÊN - MSSV </span>
+			wchar_t a[] = L" - ";
+			int ChieuDaiTen = wcslen(sv[0].HovaTen);
+			ChenDuLieu(s, sv[0].HovaTen, 33);
+			ChenDuLieu(s, a, 33 + ChieuDaiTen);
+			ChenDuLieu(s, sv[0].MSSV, 36 + ChieuDaiTen);
+			fputws(s, FileOut);
+			continue;
+		}
+		fputws(s, FileOut);
+	}
+	fclose(FileOut);
+}
+
+
+int wmain(int argc, wchar_t* argv[])
+{
+	SINHVIEN *sv = new SINHVIEN[N];
+	FILE *FileIn,*FileHTML;
+	//MỞ FILE GIOITHIEU.CSV
+	FileIn = _wfopen(L"gioithieu.csv", L"r,ccs=UTF-8");
+	if (!FileIn)
+	{
+		wprintf(L"Khong the mo file.\n");
+	}
+	else
+	{
+		DocFileCSV(FileIn, sv);
+	}
+	//MỞ FILE HTML.TXT 
+	FileHTML = _wfopen(L"HTML.txt", L"r,ccs=UTF-8");
+	if (!FileHTML)
+	{
+		wprintf(L"Khong the mo file.\n");
+	}
+	else
+	{
+		XuLy(FileHTML, sv);
+	}
+	fclose(FileIn);
+	fclose(FileHTML);
 }
