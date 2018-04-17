@@ -30,18 +30,33 @@ void DocFileCSV(FILE *FileIn, SINHVIEN *&sv)
 		fwscanf(FileIn, L"%d", &sv[i].NienKhoa);
 		fseek(FileIn, 1, 1);
 		fwscanf(FileIn, L"%[^,],%[^,],%[^,],%[^,]", &sv[i].Email, &sv[i].Ngaysinh, &sv[i].Hinh, &sv[i].MoTa);
-		fseek(FileIn, 2, 1);
+		fseek(FileIn, 1, 1);
 		fgetws(sv[i].Sothich, 1000, FileIn);
 	}
 }
 
-//HÀM XỬ LÝ CHUỖI CÓ DẤU " "
+// HÀM XỬ LÝ CHUỖI CÓ DẤU " "
 void XuLyChuoi(wchar_t ChuoiCanXuLy[])
 {
 	int ChieuDaiChuoi = wcslen(ChuoiCanXuLy);
-	if (ChuoiCanXuLy[ChieuDaiChuoi] == '"')
+	if (ChuoiCanXuLy[0] == '"')
 	{
-		ChuoiCanXuLy[ChieuDaiChuoi] = '\0';
+		for (int i = 0; i < ChieuDaiChuoi; i++)
+		{
+			ChuoiCanXuLy[i] = ChuoiCanXuLy[i + 1];
+		}
+		ChieuDaiChuoi -= 1;
+		if (ChuoiCanXuLy[ChieuDaiChuoi - 2] == '"')
+		{
+			ChuoiCanXuLy[ChieuDaiChuoi - 2] = ChuoiCanXuLy[ChieuDaiChuoi - 1];
+			ChuoiCanXuLy[ChieuDaiChuoi - 1] = ChuoiCanXuLy[ChieuDaiChuoi];
+			ChieuDaiChuoi -= 1;
+		}
+		else
+		{
+			ChuoiCanXuLy[ChieuDaiChuoi - 1] = ChuoiCanXuLy[ChieuDaiChuoi];
+			ChieuDaiChuoi -= 1;
+		}
 	}
 }
 
@@ -66,14 +81,15 @@ void ChenDuLieu(wchar_t *ChuoiCha, wchar_t *ChuoiCon,int ViTriChen)
 	else wcscpy(ChuoiCha + ViTriChen, ChuoiCon);
 }
 
-/*
-//HÀM TẠO TÊN FILE 
-void TaoTenFile(wchar_t *&TenFile, wchar_t MSSV)
+
+//HÀM TẠO TÊN FILE.HTML
+void TaoTenFile(wchar_t* MSSV, wchar_t TenFile[])
 {
 	wchar_t DuoiFile[] = L".html";
+	wcscpy(TenFile, MSSV);
 	wcscat(TenFile, DuoiFile);
 }
-*/
+
 
 //HÀM XULY DÙNG ĐỂ NỘI DUNG TỪ FILE HTML.TXT ĐỒNG THỜI GHI DỮ LIỆU VÀO FILE .HTML
 void XuLy(FILE* FileHTML, SINHVIEN *sv)
@@ -91,7 +107,7 @@ void XuLy(FILE* FileHTML, SINHVIEN *sv)
 	
 	wchar_t Email[] = L"Email: ";
 	int ChieuDai4 = wcslen(Email);
-	
+
 	wchar_t Personal_Image[] = L"<div class=\"Personal_HinhcanhanKhung\"><img src=\"Images/";
 	int ChieuDai5 = wcslen(Personal_Image);
 	
@@ -119,104 +135,107 @@ void XuLy(FILE* FileHTML, SINHVIEN *sv)
 	wchar_t SinhVienThucHien[] = L"TH2012/03</br>";
 	int ChieuDai13 = wcslen(SinhVienThucHien);
 
-
-
 	//GHI DỮ LIỆU VÀO FILE.HTML
-	FILE* FileOut;
-	FileOut = _wfopen(L"test.html", L"w,ccs=UTF-8");
-	wchar_t s[1000];
-	while ( !feof(FileHTML) )
+	for (int i = 0; i < N; i++)
 	{
-		int i = 0;
-		fgetws(s, 1000, FileHTML);
-		if (wcsstr(s, Title) != NULL)
+		FILE* FileOut;
+		wchar_t TenFile[20];
+		TaoTenFile(sv[i].MSSV, TenFile);
+		FileOut = _wfopen(TenFile, L"w,ccs=UTF-8");
+		wchar_t s[1000];
+		rewind(FileHTML);
+		while (!feof(FileHTML))
 		{
-			ChenDuLieu(s, sv[i].HovaTen, ChieuDai1);
-			fputws(s, FileOut);
-			continue; //DÙNG ĐỂ BỎ QUA CÁC DÒNG BÊN DƯỚI VÀ THỰC HIỆN TIẾP VÒNG LẶP
-		}
-		if (wcsstr(s, Personal_Fullname) != NULL)
-		{
-			wchar_t a[] = L" - ";
-			int ChieuDaiTen = wcslen(sv[i].HovaTen);
-			ChenDuLieu(s, sv[i].HovaTen, ChieuDai2);
-			ChenDuLieu(s, a, ChieuDai2 + ChieuDaiTen);
-			ChenDuLieu(s, sv[i].MSSV, ChieuDai2 + ChieuDaiTen + 3);
-			fputws(s, FileOut);
-			continue;
-		}
-		if (wcsstr(s, Personal_Department) != NULL)
-		{
-			_wcsupr(sv[i].Khoa);
-			ChenDuLieu(s, sv[i].Khoa, ChieuDai3);
-			fputws(s, FileOut);
-			continue;
-		}
-		if (wcsstr(s, Email) != NULL)
-		{
-			ChenDuLieu(s, sv[i].Email, ChieuDai4);
-			fputws(s, FileOut);
-			continue;
-		}
-		if (wcsstr(s, Personal_Image) != NULL)
-		{
-			ChenDuLieu(s, sv[i].Hinh, ChieuDai5);
-			fputws(s, FileOut);
-			continue;
-		}
-		if (wcsstr(s, HovaTen) != NULL)
-		{
-			ChenDuLieu(s, sv[i].HovaTen, ChieuDai6);
-			fputws(s, FileOut);
-			continue;
-		}if (wcsstr(s, MSSV) != NULL)
-		{
-			ChenDuLieu(s, sv[i].MSSV, ChieuDai7);
-			fputws(s, FileOut);
-			continue;
-		}
-		if (wcsstr(s, SinhVienKhoa) != NULL)
-		{
-			_wcslwr(sv[i].Khoa);
-			ChenDuLieu(s, sv[i].Khoa, ChieuDai8);
-			fputws(s, FileOut);
-			continue;
-		}
-		if (wcsstr(s, Ngaysinh) != NULL)
-		{
-			ChenDuLieu(s, sv[i].Ngaysinh, ChieuDai10);
-			fputws(s, FileOut);
-			continue;
-		}
-		if (wcsstr(s, SoThich) != NULL)
-		{
-			XuLyChuoi(sv[i].Sothich);
-			ChenDuLieu(s, sv[i].Sothich, ChieuDai11);
-			fputws(s, FileOut);
-			continue;
-		}
-		if (wcsstr(s, Mota) != NULL)
-		{
-			ChenDuLieu(s, sv[i].MoTa, ChieuDai12);
-			fputws(s, FileOut);
-			continue;
-		}
-		if (wcsstr(s, SinhVienThucHien) != NULL)
-		{
-			wchar_t MaSoSinhVien[] = L"1712867 - ";
-			int ChieuDaiMaSo = wcslen(MaSoSinhVien);
-			
-			wchar_t Ten[] = L"Âu Dương Gia Tuấn";
-		
-			ChenDuLieu(s, MaSoSinhVien, ChieuDai6);
-			ChenDuLieu(s, Ten, ChieuDai6+ChieuDaiMaSo);
-			fputws(s, FileOut);
-			continue;
-		}
+			fgetws(s, 1000, FileHTML);
+			if (wcsstr(s, Title) != NULL)
+			{
+				ChenDuLieu(s, sv[i].HovaTen, ChieuDai1);
+				fputws(s, FileOut);
+				continue; //DÙNG ĐỂ BỎ QUA CÁC DÒNG BÊN DƯỚI VÀ THỰC HIỆN TIẾP VÒNG LẶP
+			}
+			if (wcsstr(s, Personal_Fullname) != NULL)
+			{
+				wchar_t a[] = L" - ";
+				int ChieuDaiTen = wcslen(sv[i].HovaTen);
+				ChenDuLieu(s, sv[i].HovaTen, ChieuDai2);
+				ChenDuLieu(s, a, ChieuDai2 + ChieuDaiTen);
+				ChenDuLieu(s, sv[i].MSSV, ChieuDai2 + ChieuDaiTen + 3);
+				fputws(s, FileOut);
+				continue;
+			}
+			if (wcsstr(s, Personal_Department) != NULL)
+			{
+				_wcsupr(sv[i].Khoa);
+				ChenDuLieu(s, sv[i].Khoa, ChieuDai3);
+				fputws(s, FileOut);
+				continue;
+			}
+			if (wcsstr(s, Email) != NULL)
+			{
+				ChenDuLieu(s, sv[i].Email, ChieuDai4);
+				fputws(s, FileOut);
+				continue;
+			}
+			if (wcsstr(s, Personal_Image) != NULL)
+			{
+				ChenDuLieu(s, sv[i].Hinh, ChieuDai5);
+				fputws(s, FileOut);
+				continue;
+			}
+			if (wcsstr(s, HovaTen) != NULL)
+			{
+				ChenDuLieu(s, sv[i].HovaTen, ChieuDai6);
+				fputws(s, FileOut);
+				continue;
+			}if (wcsstr(s, MSSV) != NULL)
+			{
+				ChenDuLieu(s, sv[i].MSSV, ChieuDai7);
+				fputws(s, FileOut);
+				continue;
+			}
+			if (wcsstr(s, SinhVienKhoa) != NULL)
+			{
+				_wcslwr(sv[i].Khoa);
+				ChenDuLieu(s, sv[i].Khoa, ChieuDai8);
+				fputws(s, FileOut);
+				continue;
+			}
+			if (wcsstr(s, Ngaysinh) != NULL)
+			{
+				ChenDuLieu(s, sv[i].Ngaysinh, ChieuDai10);
+				fputws(s, FileOut);
+				continue;
+			}
+			if (wcsstr(s, SoThich) != NULL)
+			{
+				XuLyChuoi(sv[i].Sothich);
+				ChenDuLieu(s, sv[i].Sothich, ChieuDai11);
+				fputws(s, FileOut);
+				continue;
+			}
+			if (wcsstr(s, Mota) != NULL)
+			{
+				XuLyChuoi(sv[i].MoTa);
+				ChenDuLieu(s, sv[i].MoTa, ChieuDai12);
+				fputws(s, FileOut);
+				continue;
+			}
+			if (wcsstr(s, SinhVienThucHien) != NULL)
+			{
+				wchar_t MaSoSinhVien[] = L"1712867 - ";
+				int ChieuDaiMaSo = wcslen(MaSoSinhVien);
 
-		fputws(s, FileOut);
+				wchar_t Ten[] = L"Âu Dương Gia Tuấn";
+
+				ChenDuLieu(s, MaSoSinhVien, ChieuDai6);
+				ChenDuLieu(s, Ten, ChieuDai6 + ChieuDaiMaSo);
+				fputws(s, FileOut);
+				continue;
+			}
+			fputws(s, FileOut);
+		}
+		fclose(FileOut);
 	}
-	fclose(FileOut);
 }
 
 
@@ -224,6 +243,7 @@ int wmain(int argc, wchar_t* argv[])
 {
 	SINHVIEN *sv = new SINHVIEN[N];
 	FILE *FileIn,*FileHTML;
+	
 	//MỞ FILE GIOITHIEU.CSV
 	FileIn = _wfopen(L"gioithieu.csv", L"r,ccs=UTF-8");
 	if (!FileIn)
@@ -234,6 +254,7 @@ int wmain(int argc, wchar_t* argv[])
 	{
 		DocFileCSV(FileIn, sv);
 	}
+	
 	//MỞ FILE HTML.TXT 
 	FileHTML = _wfopen(L"HTML.txt", L"r,ccs=UTF-8");
 	if (!FileHTML)
@@ -246,4 +267,5 @@ int wmain(int argc, wchar_t* argv[])
 	}
 	fclose(FileIn);
 	fclose(FileHTML);
+	delete[] sv;
 }
