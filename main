@@ -1,17 +1,15 @@
-#define _CRT_SECURE_NO_WARNINGS
-#include <fcntl.h> 
-#include <io.h>   
+#define _CRT_SECURE_NO_WARNINGS 
 #include <stdio.h>
 #include <string.h>
 #include <conio.h>
-#define N 4
+#define N 10
 
 //KHAI BÁO CẤU TRÚC SINH VIÊN
 struct sinhvien{
 	wchar_t MSSV[10];
 	wchar_t HovaTen[30];
 	wchar_t Khoa[30];
-	int NienKhoa;
+	wchar_t NienKhoa[5];
 	wchar_t Email[20];
 	wchar_t Ngaysinh[20];
 	wchar_t Hinh[20];
@@ -25,12 +23,29 @@ void DocFileCSV(FILE *FileIn, SINHVIEN *&sv)
 {
 	for (int i = 0; i < N; i++)
 	{
-		fwscanf(FileIn, L"%[^,],%[^,],%[^,]", &sv[i].MSSV, &sv[i].HovaTen, &sv[i].Khoa);
+		//ĐỌC DỮ LIỆU SINH VIÊN THEO DÂU ','
+		fwscanf(FileIn, L"%[^,],%[^,],%[^,],%[^,],%[^,],%[^,],%[^,]", &sv[i].MSSV, &sv[i].HovaTen, &sv[i].Khoa, &sv[i].NienKhoa, &sv[i].Email, &sv[i].Ngaysinh, &sv[i].Hinh);
+		
+		//ĐỌC DỮ LIỆU SINHVIÊN.MÔTẢ 
+		//CÓ 2 TRƯỜNG HỢP ( 1.CHUỖI KHÔNG CÓ DẤU ',' , 2.CHUỖI CÓ DẤU ',')
 		fseek(FileIn, 1, 1);
-		fwscanf(FileIn, L"%d", &sv[i].NienKhoa);
+		wchar_t KiemTra;
+		KiemTra = fgetwc(FileIn); //LẤY KÍ TỰ ĐẦU TIÊN SAU DẤU ','
+		
+		if (KiemTra == '"')  //TRƯỜNG HỢP CÓ DẤU ','
+		{
+			fwscanf(FileIn, L"%[^\"]", &sv[i].MoTa);
+			fseek(FileIn, 1, 1);
+		}
+		else //TRƯỜNG HỢP KHÔNG CÓ DẤU ','
+		{
+			fseek(FileIn, -1, 1);
+			fwscanf(FileIn, L"%[^,]", &sv[i].MoTa);
+		}
+
 		fseek(FileIn, 1, 1);
-		fwscanf(FileIn, L"%[^,],%[^,],%[^,],%[^,]", &sv[i].Email, &sv[i].Ngaysinh, &sv[i].Hinh, &sv[i].MoTa);
-		fseek(FileIn, 1, 1);
+
+		//ĐỌC CÁC KÍ TỰ CÒN LẠI TRONG DÒNG VÀ GÁN VÀO SINHVIÊN.SỞTHÍCH
 		fgetws(sv[i].Sothich, 1000, FileIn);
 	}
 }
@@ -105,7 +120,7 @@ void XuLy(FILE* FileHTML, SINHVIEN *sv)
 	wchar_t Personal_Department[] = L"<div class=\"Personal_Department\">KHOA ";
 	int ChieuDai3 = wcslen(Personal_Department);
 	
-	wchar_t Email[] = L"Email: ";
+	wchar_t Email[] = L"<div class=\"Personal_Phone\">Email: ";
 	int ChieuDai4 = wcslen(Email);
 
 	wchar_t Personal_Image[] = L"<div class=\"Personal_HinhcanhanKhung\"><img src=\"Images/";
@@ -122,18 +137,21 @@ void XuLy(FILE* FileHTML, SINHVIEN *sv)
 	
 	wchar_t Khoa[] = L"<li>Khóa: ";
 	int ChieuDai9 = wcslen(Khoa);
+
+	wchar_t Email_2[] = L"<li>Email: ";
+	int ChieuDai10 = wcslen(Email_2);
 	
 	wchar_t Ngaysinh[] = L"<li>Ngày sinh: ";
-	int ChieuDai10 = wcslen(Ngaysinh);
+	int ChieuDai11 = wcslen(Ngaysinh);
 	
 	wchar_t SoThich[] = L"<ul class=\"TextInList\"><li>";
-	int ChieuDai11 = wcslen(SoThich);
+	int ChieuDai12 = wcslen(SoThich);
 	
 	wchar_t Mota[] = L"<div class=\"Description\">";
-	int ChieuDai12 = wcslen(Mota);
+	int ChieuDai13 = wcslen(Mota);
 	
 	wchar_t SinhVienThucHien[] = L"TH2012/03</br>";
-	int ChieuDai13 = wcslen(SinhVienThucHien);
+	int ChieuDai14 = wcslen(SinhVienThucHien);
 
 	//GHI DỮ LIỆU VÀO FILE.HTML
 	for (int i = 0; i < N; i++)
@@ -200,23 +218,35 @@ void XuLy(FILE* FileHTML, SINHVIEN *sv)
 				fputws(s, FileOut);
 				continue;
 			}
+			if (wcsstr(s, Khoa) != NULL)
+			{
+				ChenDuLieu(s, sv[i].NienKhoa, ChieuDai9);
+				fputws(s, FileOut);
+				continue;
+			}
+			if (wcsstr(s, Email_2) != NULL)
+			{
+				ChenDuLieu(s, sv[i].Email, ChieuDai10);
+				fputws(s, FileOut);
+				continue;
+			}
 			if (wcsstr(s, Ngaysinh) != NULL)
 			{
-				ChenDuLieu(s, sv[i].Ngaysinh, ChieuDai10);
+				ChenDuLieu(s, sv[i].Ngaysinh, ChieuDai11);
 				fputws(s, FileOut);
 				continue;
 			}
 			if (wcsstr(s, SoThich) != NULL)
 			{
 				XuLyChuoi(sv[i].Sothich);
-				ChenDuLieu(s, sv[i].Sothich, ChieuDai11);
+				ChenDuLieu(s, sv[i].Sothich, ChieuDai12);
 				fputws(s, FileOut);
 				continue;
 			}
 			if (wcsstr(s, Mota) != NULL)
 			{
 				XuLyChuoi(sv[i].MoTa);
-				ChenDuLieu(s, sv[i].MoTa, ChieuDai12);
+				ChenDuLieu(s, sv[i].MoTa, ChieuDai13);
 				fputws(s, FileOut);
 				continue;
 			}
@@ -268,4 +298,5 @@ int wmain(int argc, wchar_t* argv[])
 	fclose(FileIn);
 	fclose(FileHTML);
 	delete[] sv;
+	_getch();
 }
