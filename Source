@@ -160,8 +160,7 @@ void XuLy(FILE* FileHTML, SINHVIEN *sv)
 		wchar_t TenFile[25]=L"Website\\";
 		TaoTenFile(sv[i].MSSV, TenFile);
 		FileOut = _wfopen(TenFile, L"w,ccs=UTF-8");
-		wchar_t s[1000];
-		rewind(FileHTML);
+		wchar_t s[1000]; //CHUỖI DÙNG ĐỂ ĐỌC TỪNG DÒNG TRONG FILE HTML.TXT
 		while (!feof(FileHTML))
 		{
 			fgetws(s, 1000, FileHTML);
@@ -265,6 +264,7 @@ void XuLy(FILE* FileHTML, SINHVIEN *sv)
 			fputws(s, FileOut);
 		}
 		fclose(FileOut);
+		rewind(FileHTML); //DỜI CON TRỎ VỀ VỊ TRÍ ĐẦU FILE
 	}
 }
 
